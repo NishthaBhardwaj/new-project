@@ -56,8 +56,12 @@ public class CandlesticksApplication implements CommandLineRunner {
 					.thenMany(session.receive().map(WebSocketMessage::getPayloadAsText)
 							.timestamp()
 							.map(data -> appendMessage(data.getT2()))
-							.groupBy(Candlestick::isin)
-							.window(Duration.ofSeconds(10))
+							.groupBy(cand -> {
+								String isin = cand.isin();
+								System.out.println(isin);
+								return isin;
+							})
+							.window(Duration.ofMinutes(1))
 							.flatMap(window -> window.collectList())
 							.flatMap(Flux::fromIterable)
 							.flatMap(groupedFlux ->
@@ -189,6 +193,7 @@ public class CandlesticksApplication implements CommandLineRunner {
 		try {
 			QuoteEvent event =  objectMapper.readValue(message, QuoteEvent.class);
 			Candlestick candlestick = new Candlestick(event.data().isin(),event.data().price());
+			//System.out.println(candlestick);
 			return candlestick;
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
